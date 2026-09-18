@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16171A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Treino">
+<title>Treino</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F2F0; --surface:#FFFFFF; --ink:#24272B; --muted:#73787E; --faint:#A4A8AD;
+  --line:#E3E4E1; --field:#F7F7F6; --ok:#3F6B55; --ok-bg:#E6EFE9; --warn:#9A6A1F;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#16171A; --surface:#1F2124; --ink:#E9EAEB; --muted:#9A9EA3; --faint:#6E7277;
+    --line:#2D3034; --field:#25282C; --ok:#9CC7AE; --ok-bg:#223029; --warn:#E0B872;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:640px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 16px 96px}
+h1,h2,.cond{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;margin:0;line-height:1.05}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* gate (login / loading) */
+.gate{min-height:100vh;display:flex;flex-direction:column;justify-content:center;max-width:420px;margin:0 auto;padding:24px}
+.gate h1{font-size:3.4rem;margin-bottom:10px}
+.gate p{color:var(--muted);margin:0 0 24px}
+.gate code{background:var(--field);padding:2px 6px;border-radius:6px;font-size:.9em}
+.btn-main{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;background:var(--ink);color:var(--bg);border-radius:14px;padding:15px;font-size:1.02rem;font-weight:600}
+.btn-main:disabled{opacity:.5}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.top h1{font-size:2.2rem}
+.top-right{display:flex;align-items:center;gap:10px}
+.sync{font-size:.8rem;color:var(--faint);white-space:nowrap}
+.sync.warn{color:var(--warn)}
+.menu-btn{background:none;border:1px solid var(--line);border-radius:10px;padding:6px 12px;color:var(--muted);font-size:.9rem}
+
+/* week */
+.week{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
+.week button{width:44px;height:44px;border:0;background:var(--field);border-radius:12px;font-size:1.3rem;line-height:1}
+.week button:disabled{opacity:.35;cursor:default}
+.week-mid{text-align:center}
+.week-mid .cond{font-size:1.6rem}
+.week-mid small{display:block;color:var(--muted);font-size:.82rem}
+
+/* tabs */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;position:sticky;top:6px;z-index:5}
+.tab{border:0;background:transparent;color:var(--muted);padding:9px 4px 7px;border-radius:10px;font-family:"Barlow Condensed",sans-serif;font-size:1.02rem;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab small{font-family:"Barlow",sans-serif;font-size:.7rem;color:var(--faint)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.tab[aria-selected="true"] small{color:var(--bg);opacity:.7}
+.day-sub{color:var(--muted);margin:18px 2px 10px;font-size:.92rem}
+
+/* exercise card */
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:10px}
+.ex-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ex-name{font-weight:600}
+.ex-target{font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;font-weight:600;white-space:nowrap}
+.ex-meta{font-size:.82rem;color:var(--muted);margin-top:2px}
+.badge{display:none;margin-top:10px;font-size:.82rem;font-weight:600;color:var(--ok);background:var(--ok-bg);padding:5px 10px;border-radius:8px}
+.badge.show{display:inline-block}
+.sets{margin-top:12px;display:grid;gap:6px}
+.set{display:grid;grid-template-columns:34px 1fr 1fr;gap:8px;align-items:center}
+.set-n{font-family:"Barlow Condensed",sans-serif;color:var(--faint);font-size:1rem;text-align:center}
+.field{position:relative}
+.field input{width:100%;font:inherit;font-size:1.05rem;color:var(--ink);background:var(--field);border:1px solid transparent;border-radius:10px;padding:10px 42px 10px 12px;appearance:none;-moz-appearance:textfield}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.field input:focus{background:var(--surface);border-color:var(--faint);outline:none}
+.field input::placeholder{color:var(--faint)}
+.field span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.78rem;color:var(--faint);pointer-events:none}
+details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+summary{font-size:.85rem;color:var(--muted);cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+ "}
+details[open] summary::before{content:"− "}
+.hist{margin:8px 0 0;padding:0;list-style:none;font-size:.88rem}
+.hist li{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:4px 0}
+.hist b{font-family:"Barlow Condensed",sans-serif;font-weight:600;color:var(--muted)}
+.empty{color:var(--faint)}
+
+/* sheet */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet.open{display:flex}
+.sheet-box{background:var(--surface);width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:20px 16px max(20px,env(safe-area-inset-bottom))}
+.sheet-box h2{font-size:1.6rem;margin-bottom:4px}
+.sheet-box p{color:var(--muted);font-size:.9rem;margin:0 0 14px;word-break:break-all}
+.sheet-box button,.sheet-box label{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--field);border-radius:12px;padding:13px 14px;margin-bottom:8px;font-size:.98rem;cursor:pointer}
+.sheet-box .danger{color:#B04A4A}
+.sheet-box .close{background:none;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:30;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- tela de entrada -->
+<div class="gate" id="gate">
+  <h1>Treino</h1>
+  <p id="gateMsg">Carregando…</p>
+  <button class="btn-main" id="loginBtn" hidden>Entrar com Google</button>
+</div>
+
+<!-- app -->
+<div class="wrap" id="app" hidden>
+  <div class="top">
+    <h1>Treino</h1>
+    <div class="top-right">
+      <span class="sync" id="sync">Salvo</span>
+      <button class="menu-btn" id="menuBtn">Conta</button>
+    </div>
+  </div>
+
+  <div class="week">
+    <button id="prevW" aria-label="Semana anterior">‹</button>
+    <div class="week-mid"><div class="cond" id="wLabel">Semana 1</div><small id="wPhase"></small></div>
+    <button id="nextW" aria-label="Próxima semana">›</button>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <p class="day-sub" id="daySub"></p>
+  <div id="list"></div>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-box">
+    <h2 id="sheetTitle">Conta e backup</h2>
+    <p id="who"></p>
+    <button id="exportBtn">Exportar dados (.json)</button>
+    <label>Importar dados (.json)<input type="file" id="importInput" accept="application/json,.json" hidden></label>
+    <button id="logoutBtn">Sair</button>
+    <button class="danger" id="resetBtn">Apagar tudo</button>
+    <button class="close" id="closeSheet">Fechar</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+/* =========================================================
+   COLE AQUI O SEU firebaseConfig (Configurações do projeto → Seus apps)
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDXnXq3x3vi4U7Z6Dvv98r0-N-7XG9URUw",
+  authDomain: "divisaotreino.firebaseapp.com",
+  projectId: "divisaotreino",
+  storageBucket: "divisaotreino.firebasestorage.app",
+  messagingSenderId: "228187504620",
+  appId: "1:228187504620:web:6d233bca408444cc594ac9"
+};
+/* ========================================================= */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, getDoc, getDocs, setDoc, collection, writeBatch, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ---------- plano ---------- */
+const PLAN = [
+  {id:"sa", t:"Superior A", sub:"Empurrar e puxar na horizontal", ex:[
+    {n:"Supino reto com barra", s:3, lo:6, hi:8, c:1},
+    {n:"Remada apoiada no banco (ou máquina)", s:3, lo:8, hi:10, c:1},
+    {n:"Desenvolvimento com halteres sentado", s:2, lo:8, hi:10, c:1},
+    {n:"Puxada frontal", s:2, lo:8, hi:12, c:1},
+    {n:"Elevação lateral", s:2, lo:12, hi:15, c:0},
+    {n:"Rosca direta", s:2, lo:10, hi:12, c:0},
+    {n:"Tríceps na polia (corda)", s:2, lo:10, hi:12, c:0}]},
+  {id:"ia", t:"Inferior A", sub:"Dominante de joelho", ex:[
+    {n:"Agachamento livre (ou hack)", s:3, lo:5, hi:8, c:1},
+    {n:"Stiff / terra romeno", s:2, lo:8, hi:10, c:1},
+    {n:"Leg press", s:2, lo:10, hi:12, c:1},
+    {n:"Mesa flexora", s:2, lo:10, hi:12, c:0},
+    {n:"Panturrilha em pé", s:3, lo:10, hi:15, c:0},
+    {n:"Abdominal no cabo", s:2, lo:10, hi:15, c:0}]},
+  {id:"sb", t:"Superior B", sub:"Puxar na vertical e peito inclinado", ex:[
+    {n:"Barra fixa (ou puxada)", s:3, lo:6, hi:10, c:1},
+    {n:"Supino inclinado com halteres", s:3, lo:8, hi:10, c:1},
+    {n:"Remada baixa no cabo", s:2, lo:10, hi:12, c:1},
+    {n:"Peck deck / crucifixo máquina", s:2, lo:10, hi:15, c:0},
+    {n:"Elevação lateral no cabo", s:2, lo:12, hi:15, c:0},
+    {n:"Crucifixo inverso (deltoide posterior)", s:2, lo:12, hi:15, c:0},
+    {n:"Rosca martelo", s:2, lo:10, hi:12, c:0},
+    {n:"Tríceps francês / overhead no cabo", s:2, lo:10, hi:12, c:0}]},
+  {id:"ib", t:"Inferior B", sub:"Dominante de quadril", ex:[
+    {n:"Terra romeno ou hip thrust", s:3, lo:6, hi:10, c:1},
+    {n:"Agachamento búlgaro (cada perna)", s:2, lo:8, hi:12, c:1},
+    {n:"Cadeira extensora", s:2, lo:12, hi:15, c:0},
+    {n:"Flexora sentada", s:2, lo:10, hi:12, c:0},
+    {n:"Panturrilha sentado", s:3, lo:12, hi:15, c:0},
+    {n:"Elevação de pernas / prancha", s:2, lo:null, hi:null, c:0}]}
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+let tt;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2600); }
+
+/* ---------- checagem da config ---------- */
+if(!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("COLE")){
+  $("gateMsg").innerHTML = "Cole o seu <code>firebaseConfig</code> no início do script, no <code>index.html</code>.";
+  throw new Error("firebaseConfig ausente");
+}
+
+/* ---------- firebase ---------- */
+const fb = initializeApp(firebaseConfig);
+const auth = getAuth(fb);
+const db = initializeFirestore(fb, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+const provider = new GoogleAuthProvider();
+
+/* ---------- estado ---------- */
+const UI_KEY = "treino:ui";
+const OLD_KEY = "treino:v1";
+let uid = null;
+let S = { week:1, maxWeek:1, day:"sa", logs:{} };   // logs: "semana|dia|exercicio" -> [{kg,r}]
+
+const k = (w,d,i) => `${w}|${d}|${i}`;
+const getLog = (w,d,i) => S.logs[k(w,d,i)] || [];
+const filled = s => s && ((s.kg!==""&&s.kg!=null) || (s.r!==""&&s.r!=null));
+const hasData = log => log.some(filled);
+const fmt = s => `${s.kg!==""&&s.kg!=null?s.kg:"–"}×${s.r!==""&&s.r!=null?s.r:"–"}`;
+
+function saveUI(){ try{ localStorage.setItem(UI_KEY, JSON.stringify({week:S.week, day:S.day})); }catch(e){} }
+function loadUI(){ try{ return JSON.parse(localStorage.getItem(UI_KEY)) || {}; }catch(e){ return {}; } }
+
+/* ---------- nuvem ---------- */
+const weekRef = w => doc(db, "users", uid, "weeks", "w"+w);
+const metaRef = () => doc(db, "users", uid, "meta", "app");
+
+function weekLogs(w){
+  const out = {}, pre = w+"|";
+  for(const [key,v] of Object.entries(S.logs)) if(key.startsWith(pre)) out[key.slice(pre.length)] = v;
+  return out;
+}
+
+async function loadCloud(){
+  const snap = await getDocs(collection(db, "users", uid, "weeks"));
+  S.logs = {}; let maxW = 1;
+  snap.forEach(d => {
+    const w = parseInt(d.id.slice(1)); if(!w) return;
+    for(const [key,v] of Object.entries(d.data().logs || {})) S.logs[`${w}|${key}`] = v;
+    maxW = Math.max(maxW, w);
+  });
+  const meta = await getDoc(metaRef());
+  if(meta.exists()) maxW = Math.max(maxW, meta.data().maxWeek || 1);
+  S.maxWeek = maxW;
+
+  // migração dos dados da versão antiga (só localStorage)
+  if(snap.empty){
+    try{
+      const old = JSON.parse(localStorage.getItem(OLD_KEY));
+      if(old && old.logs && Object.keys(old.logs).length &&
+         confirm("Encontrei registros salvos neste navegador. Enviar para a nuvem?")){
+        S.logs = old.logs; S.maxWeek = old.maxWeek || 1;
+        await pushAll();
+        localStorage.removeItem(OLD_KEY);
+        toast("Registros enviados para a nuvem");
+      }
+    }catch(e){}
+  }
+
+  const ui = loadUI();
+  S.day = PLAN.some(p=>p.id===ui.day) ? ui.day : "sa";
+  S.week = Math.min(Math.max(ui.week || S.maxWeek, 1), S.maxWeek);
+}
+
+async function pushAll(){
+  const b = writeBatch(db);
+  for(let w=1; w<=S.maxWeek; w++) b.set(weekRef(w), { logs: weekLogs(w), updatedAt: serverTimestamp() });
+  b.set(metaRef(), { maxWeek: S.maxWeek });
+  await b.commit();
+}
+
+const pending = new Set(); let timer = null;
+function setSync(txt, warn){ const el=$("sync"); el.textContent = txt; el.classList.toggle("warn", !!warn); }
+function queueWrite(w){
+  pending.add(w); clearTimeout(timer);
+  setSync(navigator.onLine ? "Salvando…" : "Offline, sincroniza depois", !navigator.onLine);
+  timer = setTimeout(flush, 700);
+}
+function flush(){
+  clearTimeout(timer);
+  const ws = [...pending]; pending.clear();
+  if(!ws.length || !uid) return;
+  Promise.all(ws.map(w => setDoc(weekRef(w), { logs: weekLogs(w), updatedAt: serverTimestamp() })))
+    .then(() => setSync("Salvo"))
+    .catch(e => { setSync("Erro ao salvar", true); toast("Erro ao salvar: " + (e.code || e.message)); });
+}
+function saveMeta(){ setDoc(metaRef(), { maxWeek: S.maxWeek }).catch(()=>{}); }
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") flush(); });
+window.addEventListener("offline", () => setSync("Offline, sincroniza depois", true));
+window.addEventListener("online", () => setSync("Salvo"));
+
+/* ---------- lógica de progressão ---------- */
+function lastBefore(w,d,i){
+  for(let x=w-1; x>=1; x--){ const l = getLog(x,d,i); if(hasData(l)) return {w:x, log:l}; }
+  return null;
+}
+function hitTop(log, ex){
+  if(ex.hi==null) return false;
+  const done = log.slice(0, ex.s);
+  return done.length >= ex.s && done.every(s => filled(s) && Number(s.r) >= ex.hi);
+}
+function badgeText(d,i,ex){
+  const cur = getLog(S.week,d,i);
+  if(hitTop(cur, ex)) return "Bateu o topo da faixa. Próxima semana: subir a carga";
+  const prev = lastBefore(S.week,d,i);
+  if(prev && hitTop(prev.log, ex) && !hasData(cur)) return "Semana passada bateu o topo. Hora de subir a carga";
+  return "";
+}
+function phaseText(w){
+  if(w<=2) return "Readaptação, RIR 3–4 em tudo";
+  if(w===4 || w===5) return "Semana de revisar o volume";
+  return "Compostos RIR 1–3, isoladores RIR 0–1";
+}
+
+/* ---------- render ---------- */
+function renderWeek(){
+  $("wLabel").textContent = `Semana ${S.week}`;
+  $("wPhase").textContent = phaseText(S.week);
+  $("prevW").disabled = S.week <= 1;
+  $("nextW").setAttribute("aria-label", S.week >= S.maxWeek ? "Começar nova semana" : "Próxima semana");
+}
+function renderTabs(){
+  $("tabs").innerHTML = PLAN.map(d => {
+    const done = d.ex.filter((_,i)=>hasData(getLog(S.week,d.id,i))).length;
+    return `<button class="tab" role="tab" aria-selected="${d.id===S.day}" data-id="${d.id}">${d.t}<small>${done}/${d.ex.length}</small></button>`;
+  }).join("");
+}
+function histHTML(d,i){
+  const rows = [];
+  for(let w=1; w<=S.maxWeek; w++){
+    const l = getLog(w,d,i);
+    if(hasData(l)) rows.push(`<li><b>S${w}</b><span>${l.filter(filled).map(fmt).join(", ")}</span></li>`);
+  }
+  return rows.length ? rows.join("") : `<li class="empty">Nenhum registro ainda</li>`;
+}
+function renderList(){
+  const d = PLAN.find(x=>x.id===S.day);
+  $("daySub").textContent = d.sub;
+  $("list").innerHTML = d.ex.map((ex,i) => {
+    const cur = getLog(S.week,d.id,i);
+    const prev = lastBefore(S.week,d.id,i);
+    const target = ex.hi==null ? `${ex.s} séries` : `${ex.s} × ${ex.lo}–${ex.hi}`;
+    const rir = S.week<=2 ? "RIR 3–4" : (ex.c ? "RIR 1–3" : "RIR 0–1");
+    const prevTxt = prev ? `Semana ${prev.w}: ${prev.log.filter(filled).map(fmt).join(", ")}` : "Sem registro anterior";
+    const b = badgeText(d.id,i,ex);
+    let sets = "";
+    for(let j=0;j<ex.s;j++){
+      const v = cur[j] || {}, p = prev ? (prev.log[j] || {}) : {};
+      sets += `<div class="set">
+        <div class="set-n">${j+1}</div>
+        <div class="field"><input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${esc(v.kg??"")}" placeholder="${esc(p.kg??"")}" aria-label="${esc(ex.n)}, série ${j+1}, carga"><span>kg</span></div>
+        <div class="field"><input inputmode="numeric" data-i="${i}" data-j="${j}" data-f="r" value="${esc(v.r??"")}" placeholder="${esc(p.r??"")}" aria-label="${esc(ex.n)}, série ${j+1}, repetições"><span>${ex.hi==null?"s/reps":"reps"}</span></div>
+      </div>`;
+    }
+    return `<article class="ex">
+      <div class="ex-head"><div class="ex-name">${esc(ex.n)}</div><div class="ex-target">${target}</div></div>
+      <div class="ex-meta">${rir} · ${esc(prevTxt)}</div>
+      <div class="badge ${b?"show":""}" id="badge-${i}">${esc(b)}</div>
+      <div class="sets">${sets}</div>
+      <details><summary>Histórico</summary><ul class="hist" id="hist-${i}">${histHTML(d.id,i)}</ul></details>
+    </article>`;
+  }).join("");
+}
+function render(){ renderWeek(); renderTabs(); renderList(); }
+
+/* ---------- eventos ---------- */
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab"); if(!b) return;
+  S.day = b.dataset.id; saveUI(); renderTabs(); renderList(); window.scrollTo({top:0});
+});
+$("list").addEventListener("input", e => {
+  const t = e.target; if(!t.dataset.f) return;
+  const i = +t.dataset.i, j = +t.dataset.j, f = t.dataset.f;
+  const key = k(S.week,S.day,i);
+  const log = S.logs[key] || [];
+  for(let x=0; x<=j; x++) log[x] = Object.assign({kg:"", r:""}, log[x]);
+  log[j][f] = t.value.replace(",", ".").trim();
+  if(hasData(log)) S.logs[key] = log; else delete S.logs[key];
+  queueWrite(S.week);
+  const ex = PLAN.find(x=>x.id===S.day).ex[i];
+  const bt = badgeText(S.day,i,ex), el = $("badge-"+i);
+  el.textContent = bt; el.classList.toggle("show", !!bt);
+  $("hist-"+i).innerHTML = histHTML(S.day,i);
+  renderTabs();
+});
+$("prevW").addEventListener("click", () => { if(S.week>1){ flush(); S.week--; saveUI(); render(); } });
+$("nextW").addEventListener("click", () => {
+  flush(); S.week++;
+  if(S.week > S.maxWeek){ S.maxWeek = S.week; saveMeta(); toast(`Semana ${S.week} criada`); }
+  saveUI(); render();
+});
+
+/* conta e backup */
+const sheet = $("sheet");
+$("menuBtn").onclick = () => sheet.classList.add("open");
+$("closeSheet").onclick = () => sheet.classList.remove("open");
+sheet.addEventListener("click", e => { if(e.target===sheet) sheet.classList.remove("open"); });
+
+$("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify({maxWeek:S.maxWeek, logs:S.logs}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `treino-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast("Backup exportado");
+};
+$("importInput").onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!data || typeof data.logs !== "object") throw 0;
+    if(!confirm("Substituir os dados atuais pelos do arquivo?")) return;
+    let maxW = data.maxWeek || 1;
+    for(const key of Object.keys(data.logs)) maxW = Math.max(maxW, parseInt(key) || 1);
+    const oldMax = S.maxWeek;
+    S.logs = data.logs; S.maxWeek = Math.max(maxW, oldMax); S.week = Math.min(S.week, S.maxWeek);
+    await pushAll(); saveUI(); render();
+    sheet.classList.remove("open"); toast("Dados importados");
+  }catch(err){ toast("Arquivo inválido. Use um backup exportado por este app"); }
+  e.target.value = "";
+};
+$("resetBtn").onclick = async () => {
+  if(!confirm("Apagar todos os registros da nuvem? Isso não pode ser desfeito.")) return;
+  try{
+    const b = writeBatch(db);
+    for(let w=1; w<=S.maxWeek; w++) b.delete(weekRef(w));
+    b.delete(metaRef());
+    await b.commit();
+    S.logs = {}; S.maxWeek = 1; S.week = 1; saveUI(); render();
+    sheet.classList.remove("open"); toast("Tudo apagado");
+  }catch(e){ toast("Erro ao apagar: " + (e.code || e.message)); }
+};
+$("logoutBtn").onclick = async () => { flush(); await signOut(auth); sheet.classList.remove("open"); };
+
+/* ---------- login ---------- */
+$("loginBtn").onclick = async () => {
+  $("loginBtn").disabled = true;
+  try{ await signInWithPopup(auth, provider); }
+  catch(e){
+    if(e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment"){
+      await signInWithRedirect(auth, provider);
+    } else if(e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request"){
+      toast("Não foi possível entrar: " + e.code);
+    }
+  }
+  $("loginBtn").disabled = false;
+};
+getRedirectResult(auth).catch(e => toast("Não foi possível entrar: " + e.code));
+
+onAuthStateChanged(auth, async user => {
+  if(!user){
+    uid = null;
+    $("app").hidden = true; $("gate").hidden = false;
+    $("gateMsg").textContent = "Entre com sua conta Google para salvar seus treinos na nuvem e acessar de qualquer aparelho.";
+    $("loginBtn").hidden = false;
+    return;
+  }
+  uid = user.uid;
+  $("loginBtn").hidden = true; $("gateMsg").textContent = "Carregando seus treinos…";
+  try{
+    await loadCloud();
+    $("who").textContent = `Conectado como ${user.email}. Os dados ficam salvos no Firebase e sincronizam entre aparelhos.`;
+    $("gate").hidden = true; $("app").hidden = false;
+    setSync(navigator.onLine ? "Salvo" : "Offline, sincroniza depois", !navigator.onLine);
+    render();
+  }catch(e){
+    $("gateMsg").textContent = e.code === "permission-denied"
+      ? "Sem permissão para ler os dados. Confira se as regras do Firestore foram publicadas."
+      : "Erro ao carregar: " + (e.code || e.message);
+  }
+});
+</script>
+</body>
+</html>
