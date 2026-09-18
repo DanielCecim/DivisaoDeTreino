@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121314">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Treino">
+<title>Treino</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23121314'/><rect x='14' y='38' width='10' height='24' rx='3' fill='%23F2B632'/><rect x='76' y='38' width='10' height='24' rx='3' fill='%23F2B632'/><rect x='26' y='30' width='10' height='40' rx='3' fill='%23ECEAE4'/><rect x='64' y='30' width='10' height='40' rx='3' fill='%23ECEAE4'/><rect x='36' y='46' width='28' height='8' rx='2' fill='%23ECEAE4'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#121314;          /* piso de borracha */
+  --surface:#1B1D1F;
+  --surface2:#24272A;
+  --line:#2E3236;
+  --chalk:#ECEAE4;       /* texto: giz */
+  --muted:#8F949A;
+  --faint:#5F656B;
+  --amber:#F2B632;       /* anilha amarela */
+  --amber-ink:#1A1400;
+  --ok:#7FC49A;
+  --warn:#E9A15A;
+  --r:18px;
+  --bar-h:74px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--chalk);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+h1,h2,h3,.cond{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;margin:0;line-height:1}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.app{max-width:520px;margin:0 auto;min-height:100vh;position:relative}
+
+/* ---------- entrada ---------- */
+.gate{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:32px 24px max(32px,env(safe-area-inset-bottom));
+  background:radial-gradient(60% 45% at 50% 38%, rgba(242,182,50,.13), transparent 70%), var(--bg);}
+.gate-in{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.gate-mark{width:88px;height:88px;margin-bottom:18px}
+.gate h1{font-size:4.6rem;font-style:italic;letter-spacing:-.01em}
+.gate p{color:var(--muted);margin:12px auto 30px;max-width:32ch}
+.btn-main{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:var(--amber);color:var(--amber-ink);border-radius:16px;padding:17px;font-weight:600;font-size:1.05rem}
+.btn-main:disabled{opacity:.5}
+.gate code{background:var(--surface2);padding:2px 6px;border-radius:6px}
+
+/* ---------- barra superior ---------- */
+.appbar{position:sticky;top:0;z-index:10;padding:max(14px,env(safe-area-inset-top)) 18px 12px;
+  background:linear-gradient(var(--bg) 70%, rgba(18,19,20,.0));}
+.appbar-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.wk h1{font-size:2.5rem;font-style:italic}
+.wk small{display:block;color:var(--muted);font-size:.85rem;margin-top:4px}
+.me{display:flex;align-items:center;gap:10px}
+.sync{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.sync.busy{background:var(--amber)}
+.sync.off{background:var(--warn)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);overflow:hidden;display:grid;place-items:center;font-weight:600}
+.avatar img{width:100%;height:100%;object-fit:cover}
+
+/* dias */
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.dchip{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 8px 9px;text-align:left}
+.dchip b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.05rem;font-weight:700;line-height:1.05}
+.dchip span{display:block;font-size:.7rem;color:var(--muted);margin-top:2px}
+.dchip i{display:block;height:3px;border-radius:2px;background:var(--line);margin-top:7px;overflow:hidden}
+.dchip i::after{content:"";display:block;height:100%;width:var(--p,0%);background:var(--amber);transition:width .3s}
+.dchip[aria-selected="true"]{background:var(--chalk);color:var(--bg);border-color:var(--chalk)}
+.dchip[aria-selected="true"] span{color:#55595E}
+.dchip[aria-selected="true"] i{background:#CFCCC4}
+.dchip[aria-selected="true"] i::after{background:var(--bg)}
+
+/* ---------- lista ---------- */
+.content{padding:4px 14px calc(var(--bar-h) + 34px + env(safe-area-inset-bottom))}
+.day-sub{color:var(--muted);font-size:.9rem;margin:6px 4px 12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.card-top{display:grid;grid-template-columns:76px 1fr;gap:14px;padding:12px;width:100%;text-align:left;align-items:center}
+.thumb{width:76px;height:76px;border-radius:12px;background:#fff;overflow:hidden;position:relative}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .num{position:absolute;left:5px;top:5px;background:var(--bg);color:var(--chalk);font:700 .8rem "Barlow Condensed",sans-serif;border-radius:6px;padding:1px 6px}
+.c-name{font-weight:600;line-height:1.25}
+.c-target{display:flex;gap:8px;align-items:center;margin-top:5px;flex-wrap:wrap}
+.pill{font-size:.74rem;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.pill.hi{background:var(--amber);color:var(--amber-ink);font-weight:600}
+.c-prev{font-size:.8rem;color:var(--faint);margin-top:6px}
+.badge{margin:0 12px 10px;font-size:.82rem;font-weight:600;color:var(--amber-ink);background:var(--amber);padding:7px 11px;border-radius:10px}
+.sets{padding:0 12px 4px;display:grid;gap:6px}
+.set{display:grid;grid-template-columns:30px 1fr 1fr;gap:8px;align-items:center}
+.set-n{font:700 1rem "Barlow Condensed",sans-serif;color:var(--faint);text-align:center}
+.set.done .set-n{color:var(--amber)}
+.field{position:relative}
+.field input{width:100%;font:inherit;font-size:1.08rem;font-weight:500;color:var(--chalk);background:var(--surface2);border:1px solid transparent;border-radius:11px;padding:11px 44px 11px 12px;appearance:none;-moz-appearance:textfield}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.field input:focus{border-color:var(--amber);outline:none;background:#2A2D31}
+.field input::placeholder{color:var(--faint)}
+.field span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.74rem;color:var(--faint);pointer-events:none}
+.card-foot{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);margin-top:10px}
+.card-foot button{padding:12px;font-size:.88rem;color:var(--muted);font-weight:500}
+.card-foot button+button{border-left:1px solid var(--line)}
+.hist{list-style:none;margin:0;padding:4px 14px 12px;font-size:.88rem;border-top:1px solid var(--line)}
+.hist li{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:5px 0}
+.hist b{font-family:"Barlow Condensed",sans-serif;color:var(--muted)}
+.empty{color:var(--faint)}
+
+/* ---------- barra inferior ---------- */
+.bottombar{position:fixed;left:0;right:0;bottom:0;z-index:15;padding:10px 14px max(12px,env(safe-area-inset-bottom));
+  background:rgba(18,19,20,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+.bb{max-width:492px;margin:0 auto;display:grid;grid-template-columns:56px 1fr 56px;gap:10px;align-items:center}
+.nav{height:52px;border-radius:14px;background:var(--surface2);font-size:1.5rem;line-height:1}
+.nav:disabled{opacity:.3;cursor:default}
+.timer{height:52px;border-radius:14px;background:var(--amber);color:var(--amber-ink);display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;position:relative;overflow:hidden}
+.timer .t{font:700 1.5rem "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.timer .fill{position:absolute;inset:0;background:rgba(0,0,0,.12);transform-origin:left;transform:scaleX(var(--f,0))}
+.timer > *{position:relative}
+.timer.run{background:var(--chalk);color:var(--bg)}
+.pop{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);background:var(--surface2);border:1px solid var(--line);border-radius:16px;padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:min(340px,92vw);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.pop button{padding:12px 0;border-radius:10px;background:var(--surface);font:700 1.15rem "Barlow Condensed",sans-serif}
+.pop p{grid-column:1/-1;margin:2px 4px 4px;font-size:.8rem;color:var(--muted)}
+
+/* ---------- tela do exercício ---------- */
+.screen{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);visibility:hidden}
+.screen.open{transform:none;visibility:visible}
+.screen-in{max-width:520px;margin:0 auto;padding-bottom:max(30px,env(safe-area-inset-bottom))}
+.media{position:relative;background:#fff;aspect-ratio:4/3;overflow:hidden}
+.media img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .45s}
+.media img.b{opacity:0}
+.media.show-b img.b{opacity:1}
+.media.show-b img.a{opacity:0}
+.back{position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(18,19,20,.85);color:var(--chalk);font-size:1.4rem}
+.frames{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(18,19,20,.85);padding:4px;border-radius:999px;z-index:2}
+.frames button{padding:6px 12px;border-radius:999px;font-size:.78rem;color:var(--muted)}
+.frames button[aria-pressed="true"]{background:var(--chalk);color:var(--bg);font-weight:600}
+.det{padding:20px 18px 0}
+.det h2{font-size:2.2rem;font-style:italic}
+.det .muscles{color:var(--muted);margin:8px 0 14px}
+.det .pills{display:flex;gap:6px;flex-wrap:wrap}
+.det h3{font-size:1.35rem;margin:26px 0 10px}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.steps li::before{content:counter(s);width:26px;height:26px;border-radius:8px;background:var(--surface2);display:grid;place-items:center;font:700 .95rem "Barlow Condensed",sans-serif;color:var(--amber)}
+.alert{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:12px;padding:12px 14px;font-size:.93rem}
+.alert b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.1rem;margin-bottom:2px}
+.credit{color:var(--faint);font-size:.72rem;margin-top:22px}
+
+/* ---------- sheet conta ---------- */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:40}
+.sheet.open{display:flex}
+.sheet-box{background:var(--surface);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:10px 16px max(20px,env(safe-area-inset-bottom))}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.sheet-box h2{font-size:1.7rem;font-style:italic}
+.sheet-box p{color:var(--muted);font-size:.88rem;margin:6px 0 14px;word-break:break-word}
+.sheet-box .opt{display:block;width:100%;text-align:left;background:var(--surface2);border-radius:13px;padding:14px;margin-bottom:8px;font-size:.98rem;cursor:pointer}
+.sheet-box .danger{color:#F08A8A}
+.sheet-box .close{text-align:center;background:none;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--bar-h) + 24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(10px);background:var(--chalk);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;font-weight:500;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- entrada -->
+<div class="gate" id="gate">
+ <div class="gate-in">
+  <svg class="gate-mark" viewBox="0 0 100 100" aria-hidden="true"><rect x="8" y="36" width="12" height="28" rx="3" fill="#F2B632"/><rect x="80" y="36" width="12" height="28" rx="3" fill="#F2B632"/><rect x="22" y="26" width="12" height="48" rx="3" fill="#ECEAE4"/><rect x="66" y="26" width="12" height="48" rx="3" fill="#ECEAE4"/><rect x="34" y="46" width="32" height="8" rx="2" fill="#ECEAE4"/></svg>
+  <h1>Treino</h1>
+  <p id="gateMsg">Carregando…</p>
+  <button class="btn-main" id="loginBtn" hidden>
+    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#1A1400" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
+    Entrar com Google
+  </button>
+ </div>
+</div>
+
+<!-- app -->
+<div class="app" id="app" hidden>
+  <header class="appbar">
+    <div class="appbar-row">
+      <div class="wk"><h1 id="wLabel">Semana 1</h1><small id="wPhase"></small></div>
+      <div class="me"><span class="sync" id="sync" title="Sincronizado"></span><button class="avatar" id="menuBtn" aria-label="Conta e backup"></button></div>
+    </div>
+    <nav class="days" role="tablist" id="days"></nav>
+  </header>
+
+  <main class="content">
+    <p class="day-sub" id="daySub"></p>
+    <div id="list"></div>
+  </main>
+</div>
+
+<!-- barra inferior -->
+<div class="bottombar" id="bottombar" hidden>
+  <div class="bb">
+    <button class="nav" id="prevW" aria-label="Semana anterior">‹</button>
+    <div style="position:relative">
+      <button class="timer" id="timerBtn" aria-label="Timer de descanso"><span class="fill"></span><span id="timerTxt">Descanso</span></button>
+      <div class="pop" id="timerPop" hidden>
+        <p>Tempo de descanso</p>
+        <button data-s="60">1:00</button><button data-s="90">1:30</button><button data-s="120">2:00</button><button data-s="180">3:00</button>
+      </div>
+    </div>
+    <button class="nav" id="nextW" aria-label="Próxima semana">›</button>
+  </div>
+</div>
+
+<!-- tela do exercício -->
+<section class="screen" id="screen" aria-modal="true" role="dialog" aria-labelledby="dName">
+  <div class="screen-in">
+    <div class="media" id="media">
+      <button class="back" id="backBtn" aria-label="Voltar">‹</button>
+      <img class="a" id="imgA" alt="">
+      <img class="b" id="imgB" alt="">
+      <div class="frames">
+        <button id="fA" aria-pressed="true">Início</button>
+        <button id="fB" aria-pressed="false">Fim</button>
+      </div>
+    </div>
+    <div class="det">
+      <h2 id="dName"></h2>
+      <p class="muscles" id="dMuscles"></p>
+      <div class="pills" id="dPills"></div>
+      <h3>Como fazer</h3>
+      <ol class="steps" id="dSteps"></ol>
+      <div class="alert"><b>Atenção</b><span id="dTip"></span></div>
+      <p class="credit">Imagens: Free Exercise DB, domínio público.</p>
+    </div>
+  </div>
+</section>
+
+<!-- conta -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-box">
+    <div class="grab"></div>
+    <h2 id="sheetTitle">Conta</h2>
+    <p id="who"></p>
+    <button class="opt" id="exportBtn">Exportar backup (.json)</button>
+    <label class="opt">Importar backup (.json)<input type="file" id="importInput" accept="application/json,.json" hidden></label>
+    <button class="opt" id="logoutBtn">Sair</button>
+    <button class="opt danger" id="resetBtn">Apagar todos os registros</button>
+    <button class="opt close" id="closeSheet">Fechar</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const firebaseConfig = {
+  apiKey: "AIzaSyDXnXq3x3vi4U7Z6Dvv98r0-N-7XG9URUw",
+  authDomain: "divisaotreino.firebaseapp.com",
+  projectId: "divisaotreino",
+  storageBucket: "divisaotreino.firebasestorage.app",
+  messagingSenderId: "228187504620",
+  appId: "1:228187504620:web:6d233bca408444cc594ac9"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, getDoc, getDocs, setDoc, collection, writeBatch, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= plano + instruções ================= */
+const PLAN = [
+  {id:"sa", t:"Superior A", sub:"Empurrar e puxar na horizontal", ex:[
+    {n:"Supino reto com barra", s:3, lo:6, hi:8, c:1, img:"Barbell_Bench_Press_-_Medium_Grip",
+     m:"Peitoral, tríceps e deltoide anterior",
+     how:["Deite com os olhos logo abaixo da barra, pés firmes no chão e escápulas juntas e para baixo.",
+          "Segure a barra um pouco mais aberto que a largura dos ombros e tire do suporte com os braços estendidos.",
+          "Desça controlando até tocar a parte baixa do peito, com os cotovelos entre 45° e 70° do tronco.",
+          "Empurre de volta sem tirar o glúteo nem as escápulas do banco."],
+     tip:"Não quique a barra no peito e não abra os cotovelos a 90°, que sobrecarrega o ombro."},
+    {n:"Remada apoiada no banco (ou máquina)", s:3, lo:8, hi:10, c:1, img:"Incline_Bench_Pull",
+     m:"Dorsal, romboides, trapézio médio e deltoide posterior",
+     how:["Ajuste o banco em cerca de 30° e deite de bruços com o peito apoiado, um halter em cada mão.",
+          "Comece com os braços estendidos para baixo e os ombros soltos.",
+          "Puxe levando os cotovelos para trás, perto do corpo, e aperte as escápulas no topo.",
+          "Desça devagar até alongar bem as costas."],
+     tip:"O peito não sai do banco. Se precisar dar tranco, a carga está alta demais."},
+    {n:"Desenvolvimento com halteres sentado", s:2, lo:8, hi:10, c:1, img:"Seated_Dumbbell_Press",
+     m:"Deltoide anterior e medial, tríceps",
+     how:["Ajuste o encosto quase na vertical e sente com as costas apoiadas.",
+          "Comece com os halteres na altura dos ombros, palmas para a frente e cotovelos levemente à frente do tronco.",
+          "Empurre para cima até quase estender os braços, sem bater os halteres.",
+          "Desça controlando até a altura das orelhas."],
+     tip:"Mantenha o abdômen firme para não arquear demais a lombar."},
+    {n:"Puxada frontal", s:2, lo:8, hi:12, c:1, img:"Wide-Grip_Lat_Pulldown",
+     m:"Dorsal e bíceps",
+     how:["Ajuste o apoio das coxas para não subir do banco e segure a barra um pouco mais aberto que os ombros.",
+          "Incline o tronco levemente para trás e mantenha o peito alto.",
+          "Puxe a barra até a parte alta do peito, levando os cotovelos para baixo e para trás.",
+          "Volte controlando até sentir as costas alongarem."],
+     tip:"Nada de puxar atrás da nuca ou balançar o tronco para ajudar."},
+    {n:"Elevação lateral", s:2, lo:12, hi:15, c:0, img:"Side_Lateral_Raise",
+     m:"Deltoide medial",
+     how:["Em pé, halteres ao lado do corpo, cotovelos levemente flexionados e tronco um pouco inclinado à frente.",
+          "Eleve os braços para os lados até a altura dos ombros, liderando o movimento com os cotovelos.",
+          "Desça devagar, sem deixar o peso cair."],
+     tip:"Use carga leve e sem impulso. Os ombros não sobem em direção às orelhas."},
+    {n:"Rosca direta", s:2, lo:10, hi:12, c:0, img:"Barbell_Curl",
+     m:"Bíceps",
+     how:["Em pé, segure a barra com as palmas para cima, na largura dos ombros, cotovelos junto ao corpo.",
+          "Flexione os cotovelos trazendo a barra até perto dos ombros, sem levar os cotovelos para a frente.",
+          "Desça até estender os braços por completo."],
+     tip:"Não jogue o quadril para impulsionar a barra."},
+    {n:"Tríceps na polia (corda)", s:2, lo:10, hi:12, c:0, img:"Triceps_Pushdown_-_Rope_Attachment",
+     m:"Tríceps",
+     how:["Prenda a corda na polia alta e fique de frente, com os cotovelos colados ao corpo.",
+          "Estenda os cotovelos empurrando a corda para baixo e abra as pontas no final.",
+          "Volte até uns 90° de flexão sem deixar os cotovelos subirem."],
+     tip:"O cotovelo é a dobradiça. Ombros e tronco ficam parados."}]},
+
+  {id:"ia", t:"Inferior A", sub:"Dominante de joelho", ex:[
+    {n:"Agachamento livre (ou hack)", s:3, lo:5, hi:8, c:1, img:"Barbell_Full_Squat",
+     m:"Quadríceps, glúteos e adutores",
+     how:["Apoie a barra no trapézio, pés na largura dos ombros com as pontas levemente para fora.",
+          "Respire fundo e trave o abdômen antes de cada repetição.",
+          "Desça sentando entre as pernas, com os joelhos seguindo a direção dos pés, até pelo menos coxas paralelas ao chão se a mobilidade permitir.",
+          "Suba empurrando o chão com o pé inteiro, tronco firme."],
+     tip:"Os joelhos não podem cair para dentro. No hack a lógica é a mesma, com as costas apoiadas."},
+    {n:"Stiff / terra romeno", s:2, lo:8, hi:10, c:1, img:"Stiff-Legged_Barbell_Deadlift",
+     m:"Posteriores de coxa, glúteos e lombar",
+     how:["Em pé com a barra, pés na largura do quadril e joelhos quase estendidos, só destravados.",
+          "Empurre o quadril para trás deslizando a barra rente às pernas, com a coluna neutra.",
+          "Desça até sentir um alongamento forte nos posteriores, geralmente perto do meio da canela.",
+          "Suba levando o quadril à frente e contraindo o glúteo."],
+     tip:"Se a lombar arredondar, você desceu além da sua mobilidade."},
+    {n:"Leg press", s:2, lo:10, hi:12, c:1, img:"Leg_Press",
+     m:"Quadríceps e glúteos",
+     how:["Costas e quadril bem apoiados, pés no meio da plataforma na largura dos ombros.",
+          "Destrave e desça controlando até os joelhos passarem de 90°.",
+          "Empurre com o pé inteiro, sem travar totalmente os joelhos no topo."],
+     tip:"Se o quadril descolar do encosto no fundo, diminua a amplitude."},
+    {n:"Mesa flexora", s:2, lo:10, hi:12, c:0, img:"Lying_Leg_Curls",
+     m:"Posteriores de coxa",
+     how:["Deite de bruços com os joelhos logo depois da borda do banco e o rolo acima dos calcanhares.",
+          "Flexione os joelhos trazendo o rolo em direção ao glúteo.",
+          "Desça devagar até quase estender as pernas."],
+     tip:"O quadril fica colado no banco o tempo todo."},
+    {n:"Panturrilha em pé", s:3, lo:10, hi:15, c:0, img:"Standing_Calf_Raises",
+     m:"Panturrilha (gastrocnêmio)",
+     how:["Apoie a ponta dos pés na borda da plataforma, joelhos estendidos.",
+          "Desça o calcanhar o máximo possível e segure 1 segundo no alongamento.",
+          "Suba o mais alto que conseguir na ponta dos pés."],
+     tip:"Amplitude completa e pausa embaixo valem mais do que carga."},
+    {n:"Abdominal no cabo", s:2, lo:10, hi:15, c:0, img:"Cable_Crunch",
+     m:"Reto abdominal",
+     how:["Ajoelhe de frente para a polia alta segurando a corda ao lado da cabeça.",
+          "Com o quadril parado, enrole a coluna levando os cotovelos em direção às coxas.",
+          "Volte devagar até alongar o abdômen."],
+     tip:"O movimento acontece na coluna. Se o quadril sentar para trás, quem trabalha é o braço."}]},
+
+  {id:"sb", t:"Superior B", sub:"Puxar na vertical e peito inclinado", ex:[
+    {n:"Barra fixa (ou puxada)", s:3, lo:6, hi:10, c:1, img:"Pullups",
+     m:"Dorsal e bíceps",
+     how:["Segure a barra com as palmas para a frente, um pouco mais aberto que os ombros, braços estendidos.",
+          "Puxe levando o peito em direção à barra e os cotovelos para baixo, até o queixo passar da barra.",
+          "Desça controlando até estender os braços.",
+          "Se ainda não completar a faixa de reps, use a barra assistida, um elástico ou a puxada."],
+     tip:"Evite balançar o corpo e fazer meias repetições."},
+    {n:"Supino inclinado com halteres", s:3, lo:8, hi:10, c:1, img:"Incline_Dumbbell_Press",
+     m:"Peitoral superior, deltoide anterior e tríceps",
+     how:["Ajuste o banco entre 30° e 45° e comece com os halteres na altura do peito.",
+          "Mantenha as escápulas juntas e os pés firmes.",
+          "Empurre para cima e levemente para dentro.",
+          "Desça até sentir o peito alongar."],
+     tip:"Inclinação alta demais tira o peito e joga o trabalho para o ombro."},
+    {n:"Remada baixa no cabo", s:2, lo:10, hi:12, c:1, img:"Seated_Cable_Rows",
+     m:"Dorsal, romboides e trapézio médio",
+     how:["Sente com os pés apoiados, joelhos levemente flexionados e tronco ereto.",
+          "Puxe o triângulo até o abdômen com os cotovelos junto ao corpo, juntando as escápulas.",
+          "Volte estendendo os braços e deixe as escápulas avançarem."],
+     tip:"Não jogue o tronco para trás para completar a repetição."},
+    {n:"Peck deck / crucifixo máquina", s:2, lo:10, hi:15, c:0, img:"Butterfly",
+     m:"Peitoral",
+     how:["Ajuste o banco para as pegadas ficarem na altura do peito, costas apoiadas.",
+          "Com os cotovelos levemente flexionados, junte as mãos à frente num arco, apertando o peito.",
+          "Volte até sentir alongamento, sem perder o controle."],
+     tip:"Mantenha os ombros para trás; se projetarem para a frente, o peito sai do exercício."},
+    {n:"Elevação lateral no cabo", s:2, lo:12, hi:15, c:0, img:"Cable_Seated_Lateral_Raise",
+     m:"Deltoide medial",
+     how:["Com a polia baixa, segure o cabo com a mão do lado oposto, passando à frente do corpo.",
+          "Eleve o braço para o lado até a altura do ombro.",
+          "Desça devagar, aproveitando a tensão do cabo na parte de baixo."],
+     tip:"Faça todas as reps de um lado e depois troque. Registre a carga de um braço."},
+    {n:"Crucifixo inverso (deltoide posterior)", s:2, lo:12, hi:15, c:0, img:"Reverse_Flyes",
+     m:"Deltoide posterior e trapézio médio",
+     how:["Deite de bruços num banco inclinado com halteres leves, palmas viradas uma para a outra.",
+          "Com os cotovelos levemente flexionados, abra os braços para os lados até a linha do tronco.",
+          "Desça devagar."],
+     tip:"Pense em levar as mãos para longe, não em juntar as escápulas. O foco é o ombro de trás."},
+    {n:"Rosca martelo", s:2, lo:10, hi:12, c:0, img:"Hammer_Curls",
+     m:"Braquial, braquiorradial e bíceps",
+     how:["Em pé, halteres ao lado do corpo com as palmas viradas para as coxas.",
+          "Flexione os cotovelos sem girar o punho, mantendo os cotovelos parados.",
+          "Desça até estender os braços."],
+     tip:"Sem balanço de tronco. Pode alternar os braços se preferir."},
+    {n:"Tríceps francês / overhead no cabo", s:2, lo:10, hi:12, c:0, img:"Cable_Rope_Overhead_Triceps_Extension",
+     m:"Tríceps, com ênfase na porção longa",
+     how:["Prenda a corda na polia e fique de costas para ela, com a corda atrás da cabeça e os cotovelos apontando para cima.",
+          "Estenda os cotovelos levando as mãos para cima e para a frente.",
+          "Volte até sentir o tríceps alongar."],
+     tip:"Os cotovelos não devem abrir muito para os lados."}]},
+
+  {id:"ib", t:"Inferior B", sub:"Dominante de quadril", ex:[
+    {n:"Terra romeno ou hip thrust", s:3, lo:6, hi:10, c:1, img:"Romanian_Deadlift",
+     m:"Posteriores de coxa e glúteos",
+     how:["Terra romeno: segure a barra na frente das coxas, joelhos levemente flexionados.",
+          "Leve o quadril para trás com a barra rente às pernas e a coluna neutra, até os posteriores alongarem, perto dos joelhos ou pouco abaixo.",
+          "Suba estendendo o quadril e contraindo o glúteo.",
+          "Hip thrust (alternativa): costas apoiadas no banco, barra sobre o quadril; suba até alinhar tronco e coxas e segure 1 segundo."],
+     tip:"Escolha um dos dois e mantenha o mesmo por algumas semanas para conseguir comparar a progressão."},
+    {n:"Agachamento búlgaro (cada perna)", s:2, lo:8, hi:12, c:1, img:"Split_Squat_with_Dumbbells",
+     m:"Quadríceps e glúteos",
+     how:["Apoie o peito do pé de trás num banco e posicione o pé da frente cerca de um passo largo à frente.",
+          "Com um halter em cada mão, desça o joelho de trás em direção ao chão, tronco levemente inclinado.",
+          "Suba empurrando com o pé da frente.",
+          "Complete todas as reps de uma perna e depois troque."],
+     tip:"Equilíbrio primeiro, carga depois. Registre a carga de cada halter."},
+    {n:"Cadeira extensora", s:2, lo:12, hi:15, c:0, img:"Leg_Extensions",
+     m:"Quadríceps",
+     how:["Ajuste o encosto para o joelho ficar alinhado com o eixo da máquina e o rolo acima do tornozelo.",
+          "Estenda os joelhos até quase travar e segure 1 segundo no topo.",
+          "Desça devagar."],
+     tip:"Segure nas alças e mantenha o quadril no banco."},
+    {n:"Flexora sentada", s:2, lo:10, hi:12, c:0, img:"Seated_Leg_Curl",
+     m:"Posteriores de coxa",
+     how:["Alinhe o joelho com o eixo da máquina e trave bem a coxa no apoio.",
+          "Flexione os joelhos puxando o rolo para baixo e para trás.",
+          "Volte devagar até quase estender."],
+     tip:"Inclinar o tronco levemente à frente aumenta o alongamento dos posteriores."},
+    {n:"Panturrilha sentado", s:3, lo:12, hi:15, c:0, img:"Seated_Calf_Raise",
+     m:"Panturrilha (sóleo)",
+     how:["Sente com os joelhos sob o apoio e a ponta dos pés na plataforma.",
+          "Desça o calcanhar ao máximo e faça uma pausa no alongamento.",
+          "Suba o mais alto que conseguir."],
+     tip:"Com o joelho dobrado o trabalho vai mais para o sóleo, que responde bem a reps mais altas."},
+    {n:"Elevação de pernas / prancha", s:2, lo:null, hi:null, c:0, img:"Flat_Bench_Lying_Leg_Raise",
+     m:"Abdômen e core",
+     how:["Elevação: deite no banco segurando atrás da cabeça, pernas estendidas.",
+          "Eleve as pernas até uns 90°, enrolando levemente o quadril no topo.",
+          "Desça sem encostar os pés no chão.",
+          "Prancha (alternativa): apoie antebraços e pontas dos pés, corpo alinhado, glúteo e abdômen contraídos. Registre os segundos no lugar das reps."],
+     tip:"Se a lombar sair do banco na descida, reduza a amplitude."}]}
+];
+
+const IMG_CDN = "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/";
+const IMG_RAW = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+const imgSrc = (id,f) => `${IMG_CDN}${id}/${f}.jpg`;
+window.imgFallback = el => { if(!el.dataset.fb){ el.dataset.fb = 1; el.src = el.src.replace(IMG_CDN, IMG_RAW); } };
+
+/* ================= utilidades ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+let tt;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2600); }
+
+/* ================= firebase ================= */
+const fb = initializeApp(firebaseConfig);
+const auth = getAuth(fb);
+const db = initializeFirestore(fb, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+const provider = new GoogleAuthProvider();
+
+const UI_KEY = "treino:ui", OLD_KEY = "treino:v1";
+let uid = null;
+let S = { week:1, maxWeek:1, day:"sa", logs:{} };
+
+const k = (w,d,i) => `${w}|${d}|${i}`;
+const getLog = (w,d,i) => S.logs[k(w,d,i)] || [];
+const filled = s => s && ((s.kg!==""&&s.kg!=null) || (s.r!==""&&s.r!=null));
+const hasData = log => log.some(filled);
+const fmt = s => `${s.kg!==""&&s.kg!=null?s.kg:"–"}×${s.r!==""&&s.r!=null?s.r:"–"}`;
+function saveUI(){ try{ localStorage.setItem(UI_KEY, JSON.stringify({week:S.week, day:S.day})); }catch(e){} }
+function loadUI(){ try{ return JSON.parse(localStorage.getItem(UI_KEY)) || {}; }catch(e){ return {}; } }
+
+const weekRef = w => doc(db, "users", uid, "weeks", "w"+w);
+const metaRef = () => doc(db, "users", uid, "meta", "app");
+function weekLogs(w){
+  const out = {}, pre = w+"|";
+  for(const [key,v] of Object.entries(S.logs)) if(key.startsWith(pre)) out[key.slice(pre.length)] = v;
+  return out;
+}
+async function loadCloud(){
+  const snap = await getDocs(collection(db, "users", uid, "weeks"));
+  S.logs = {}; let maxW = 1;
+  snap.forEach(d => {
+    const w = parseInt(d.id.slice(1)); if(!w) return;
+    for(const [key,v] of Object.entries(d.data().logs || {})) S.logs[`${w}|${key}`] = v;
+    maxW = Math.max(maxW, w);
+  });
+  const meta = await getDoc(metaRef());
+  if(meta.exists()) maxW = Math.max(maxW, meta.data().maxWeek || 1);
+  S.maxWeek = maxW;
+  if(snap.empty){
+    try{
+      const old = JSON.parse(localStorage.getItem(OLD_KEY));
+      if(old && old.logs && Object.keys(old.logs).length && confirm("Encontrei registros salvos neste navegador. Enviar para a nuvem?")){
+        S.logs = old.logs; S.maxWeek = old.maxWeek || 1;
+        await pushAll(); localStorage.removeItem(OLD_KEY); toast("Registros enviados para a nuvem");
+      }
+    }catch(e){}
+  }
+  const ui = loadUI();
+  S.day = PLAN.some(p=>p.id===ui.day) ? ui.day : "sa";
+  S.week = Math.min(Math.max(ui.week || S.maxWeek, 1), S.maxWeek);
+}
+async function pushAll(){
+  const b = writeBatch(db);
+  for(let w=1; w<=S.maxWeek; w++) b.set(weekRef(w), { logs: weekLogs(w), updatedAt: serverTimestamp() });
+  b.set(metaRef(), { maxWeek: S.maxWeek });
+  await b.commit();
+}
+const pending = new Set(); let timer = null;
+function setSync(state){
+  const el = $("sync");
+  el.className = "sync" + (state==="busy" ? " busy" : state==="off" ? " off" : "");
+  el.title = state==="busy" ? "Salvando" : state==="off" ? "Offline, sincroniza depois" : state==="err" ? "Erro ao salvar" : "Sincronizado";
+  if(state==="err") el.style.background = "#F08A8A"; else el.style.background = "";
+}
+function queueWrite(w){
+  pending.add(w); clearTimeout(timer);
+  setSync(navigator.onLine ? "busy" : "off");
+  timer = setTimeout(flush, 700);
+}
+function flush(){
+  clearTimeout(timer);
+  const ws = [...pending]; pending.clear();
+  if(!ws.length || !uid) return;
+  Promise.all(ws.map(w => setDoc(weekRef(w), { logs: weekLogs(w), updatedAt: serverTimestamp() })))
+    .then(() => setSync("ok"))
+    .catch(e => { setSync("err"); toast("Erro ao salvar: " + (e.code || e.message)); });
+}
+function saveMeta(){ setDoc(metaRef(), { maxWeek: S.maxWeek }).catch(()=>{}); }
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") flush(); });
+window.addEventListener("offline", () => setSync("off"));
+window.addEventListener("online", () => setSync("ok"));
+
+/* ================= progressão ================= */
+function lastBefore(w,d,i){
+  for(let x=w-1; x>=1; x--){ const l = getLog(x,d,i); if(hasData(l)) return {w:x, log:l}; }
+  return null;
+}
+function hitTop(log, ex){
+  if(ex.hi==null) return false;
+  const done = log.slice(0, ex.s);
+  return done.length >= ex.s && done.every(s => filled(s) && Number(s.r) >= ex.hi);
+}
+function badgeText(d,i,ex){
+  const cur = getLog(S.week,d,i);
+  if(hitTop(cur, ex)) return "Topo da faixa batido. Próxima semana: sobe a carga";
+  const prev = lastBefore(S.week,d,i);
+  if(prev && hitTop(prev.log, ex) && !hasData(cur)) return "Semana passada bateu o topo. Hora de subir a carga";
+  return "";
+}
+const phaseText = w => w<=2 ? "Readaptação, RIR 3–4 em tudo" : (w===4||w===5) ? "Semana de revisar o volume" : "Compostos RIR 1–3, isoladores RIR 0–1";
+const rirOf = ex => S.week<=2 ? "RIR 3–4" : (ex.c ? "RIR 1–3" : "RIR 0–1");
+const targetOf = ex => ex.hi==null ? `${ex.s} séries` : `${ex.s} × ${ex.lo}–${ex.hi}`;
+
+/* ================= render ================= */
+function renderHeader(){
+  $("wLabel").textContent = `Semana ${S.week}`;
+  $("wPhase").textContent = phaseText(S.week);
+  $("prevW").disabled = S.week <= 1;
+  $("nextW").setAttribute("aria-label", S.week >= S.maxWeek ? "Começar nova semana" : "Próxima semana");
+}
+function renderDays(){
+  $("days").innerHTML = PLAN.map(d => {
+    const done = d.ex.filter((_,i)=>hasData(getLog(S.week,d.id,i))).length;
+    return `<button class="dchip" role="tab" aria-selected="${d.id===S.day}" data-id="${d.id}" style="--p:${Math.round(done/d.ex.length*100)}%">
+      <b>${d.t}</b><span>${done}/${d.ex.length}</span><i></i></button>`;
+  }).join("");
+}
+function histHTML(d,i){
+  const rows = [];
+  for(let w=1; w<=S.maxWeek; w++){
+    const l = getLog(w,d,i);
+    if(hasData(l)) rows.push(`<li><b>S${w}</b><span>${l.filter(filled).map(fmt).join(", ")}</span></li>`);
+  }
+  return rows.length ? rows.join("") : `<li class="empty">Nenhum registro ainda</li>`;
+}
+function setDone(log, j){ return filled(log[j]); }
+function renderList(){
+  const d = PLAN.find(x=>x.id===S.day);
+  $("daySub").textContent = d.sub;
+  $("list").innerHTML = d.ex.map((ex,i) => {
+    const cur = getLog(S.week,d.id,i);
+    const prev = lastBefore(S.week,d.id,i);
+    const prevTxt = prev ? `Semana ${prev.w}: ${prev.log.filter(filled).map(fmt).join(", ")}` : "Primeira vez registrando";
+    const b = badgeText(d.id,i,ex);
+    let sets = "";
+    for(let j=0;j<ex.s;j++){
+      const v = cur[j] || {}, p = prev ? (prev.log[j] || {}) : {};
+      sets += `<div class="set ${setDone(cur,j)?"done":""}" id="set-${i}-${j}">
+        <div class="set-n">${j+1}</div>
+        <div class="field"><input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${esc(v.kg??"")}" placeholder="${esc(p.kg??"")}" aria-label="${esc(ex.n)}, série ${j+1}, carga"><span>kg</span></div>
+        <div class="field"><input inputmode="numeric" data-i="${i}" data-j="${j}" data-f="r" value="${esc(v.r??"")}" placeholder="${esc(p.r??"")}" aria-label="${esc(ex.n)}, série ${j+1}, repetições"><span>${ex.hi==null?"s/reps":"reps"}</span></div>
+      </div>`;
+    }
+    return `<article class="card">
+      <button class="card-top" data-open="${i}" aria-label="Ver como fazer ${esc(ex.n)}">
+        <div class="thumb"><img loading="lazy" src="${imgSrc(ex.img,0)}" onerror="imgFallback(this)" alt=""><span class="num">${i+1}</span></div>
+        <div>
+          <div class="c-name">${esc(ex.n)}</div>
+          <div class="c-target"><span class="pill hi">${targetOf(ex)}</span><span class="pill">${rirOf(ex)}</span></div>
+          <div class="c-prev">${esc(prevTxt)}</div>
+        </div>
+      </button>
+      <div class="badge" id="badge-${i}" ${b?"":"hidden"}>${esc(b)}</div>
+      <div class="sets">${sets}</div>
+      <div class="card-foot">
+        <button data-open="${i}">Como fazer</button>
+        <button data-hist="${i}" aria-expanded="false">Histórico</button>
+      </div>
+      <ul class="hist" id="hist-${i}" hidden>${histHTML(d.id,i)}</ul>
+    </article>`;
+  }).join("");
+}
+function render(){ renderHeader(); renderDays(); renderList(); }
+
+/* ================= tela do exercício ================= */
+let frameInt = null;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function showFrame(b){
+  $("media").classList.toggle("show-b", b);
+  $("fA").setAttribute("aria-pressed", !b); $("fB").setAttribute("aria-pressed", b);
+}
+function openExercise(i){
+  const d = PLAN.find(x=>x.id===S.day), ex = d.ex[i];
+  const a = $("imgA"), b = $("imgB");
+  a.dataset.fb = ""; b.dataset.fb = "";
+  a.onerror = () => imgFallback(a); b.onerror = () => imgFallback(b);
+  a.src = imgSrc(ex.img,0); b.src = imgSrc(ex.img,1);
+  a.alt = `${ex.n}, posição inicial`; b.alt = `${ex.n}, posição final`;
+  $("dName").textContent = ex.n;
+  $("dMuscles").textContent = ex.m;
+  $("dPills").innerHTML = `<span class="pill hi">${targetOf(ex)}</span><span class="pill">${rirOf(ex)}</span><span class="pill">${ex.c?"Composto":"Isolador"}</span>`;
+  $("dSteps").innerHTML = ex.how.map(s=>`<li><span>${esc(s)}</span></li>`).join("");
+  $("dTip").textContent = ex.tip;
+  showFrame(false);
+  clearInterval(frameInt);
+  if(!reduce){ let on=false; frameInt = setInterval(()=>{ on=!on; showFrame(on); }, 1300); }
+  $("screen").scrollTop = 0;
+  $("screen").classList.add("open");
+  history.pushState({ex:i}, "");
+}
+function closeExercise(fromPop){
+  if(!$("screen").classList.contains("open")) return;
+  $("screen").classList.remove("open"); clearInterval(frameInt);
+  if(!fromPop) history.back();
+}
+$("backBtn").onclick = () => closeExercise(false);
+$("fA").onclick = () => { clearInterval(frameInt); showFrame(false); };
+$("fB").onclick = () => { clearInterval(frameInt); showFrame(true); };
+window.addEventListener("popstate", () => closeExercise(true));
+
+/* ================= eventos ================= */
+$("days").addEventListener("click", e => {
+  const b = e.target.closest(".dchip"); if(!b) return;
+  S.day = b.dataset.id; saveUI(); renderDays(); renderList(); window.scrollTo({top:0});
+});
+$("list").addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if(o){ openExercise(+o.dataset.open); return; }
+  const h = e.target.closest("[data-hist]");
+  if(h){ const el = $("hist-"+h.dataset.hist); el.hidden = !el.hidden; h.setAttribute("aria-expanded", !el.hidden); }
+});
+$("list").addEventListener("input", e => {
+  const t = e.target; if(!t.dataset.f) return;
+  const i = +t.dataset.i, j = +t.dataset.j, f = t.dataset.f;
+  const key = k(S.week,S.day,i);
+  const log = S.logs[key] || [];
+  for(let x=0; x<=j; x++) log[x] = Object.assign({kg:"", r:""}, log[x]);
+  log[j][f] = t.value.replace(",", ".").trim();
+  if(hasData(log)) S.logs[key] = log; else delete S.logs[key];
+  queueWrite(S.week);
+  const ex = PLAN.find(x=>x.id===S.day).ex[i];
+  const bt = badgeText(S.day,i,ex), el = $("badge-"+i);
+  el.textContent = bt; el.hidden = !bt;
+  $("set-"+i+"-"+j).classList.toggle("done", filled(log[j]));
+  $("hist-"+i).innerHTML = histHTML(S.day,i);
+  renderDays();
+});
+$("prevW").onclick = () => { if(S.week>1){ flush(); S.week--; saveUI(); render(); window.scrollTo({top:0}); } };
+$("nextW").onclick = () => {
+  flush(); S.week++;
+  if(S.week > S.maxWeek){ S.maxWeek = S.week; saveMeta(); toast(`Semana ${S.week} criada`); }
+  saveUI(); render(); window.scrollTo({top:0});
+};
+
+/* timer de descanso */
+let tEnd = null, tTotal = 0, tInt = null;
+const pop = $("timerPop");
+const mmss = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+$("timerBtn").onclick = e => {
+  e.stopPropagation();
+  if(tEnd){ stopTimer(); return; }
+  pop.hidden = !pop.hidden;
+};
+pop.addEventListener("click", e => {
+  const b = e.target.closest("[data-s]"); if(!b) return;
+  e.stopPropagation(); pop.hidden = true; startTimer(+b.dataset.s);
+});
+document.addEventListener("click", () => { pop.hidden = true; });
+function startTimer(sec){
+  tTotal = sec; tEnd = Date.now() + sec*1000;
+  $("timerBtn").classList.add("run"); tick();
+  tInt = setInterval(tick, 250);
+}
+function tick(){
+  const left = Math.max(0, Math.ceil((tEnd - Date.now())/1000));
+  $("timerTxt").innerHTML = `<span class="t">${mmss(left)}</span>`;
+  $("timerBtn").style.setProperty("--f", 1 - left/tTotal);
+  if(left <= 0){
+    stopTimer();
+    try{ navigator.vibrate && navigator.vibrate([250,120,250]); }catch(e){}
+    toast("Descanso acabou. Próxima série!");
+  }
+}
+function stopTimer(){
+  clearInterval(tInt); tEnd = null;
+  $("timerBtn").classList.remove("run"); $("timerBtn").style.setProperty("--f", 0);
+  $("timerTxt").textContent = "Descanso";
+}
+
+/* conta e backup */
+const sheet = $("sheet");
+$("menuBtn").onclick = () => sheet.classList.add("open");
+$("closeSheet").onclick = () => sheet.classList.remove("open");
+sheet.addEventListener("click", e => { if(e.target===sheet) sheet.classList.remove("open"); });
+$("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify({maxWeek:S.maxWeek, logs:S.logs}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `treino-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast("Backup exportado");
+};
+$("importInput").onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!data || typeof data.logs !== "object") throw 0;
+    if(!confirm("Substituir os dados atuais pelos do arquivo?")) return;
+    let maxW = data.maxWeek || 1;
+    for(const key of Object.keys(data.logs)) maxW = Math.max(maxW, parseInt(key) || 1);
+    S.logs = data.logs; S.maxWeek = Math.max(maxW, S.maxWeek); S.week = Math.min(S.week, S.maxWeek);
+    await pushAll(); saveUI(); render();
+    sheet.classList.remove("open"); toast("Dados importados");
+  }catch(err){ toast("Arquivo inválido. Use um backup exportado por este app"); }
+  e.target.value = "";
+};
+$("resetBtn").onclick = async () => {
+  if(!confirm("Apagar todos os registros da nuvem? Isso não pode ser desfeito.")) return;
+  try{
+    const b = writeBatch(db);
+    for(let w=1; w<=S.maxWeek; w++) b.delete(weekRef(w));
+    b.delete(metaRef());
+    await b.commit();
+    S.logs = {}; S.maxWeek = 1; S.week = 1; saveUI(); render();
+    sheet.classList.remove("open"); toast("Tudo apagado");
+  }catch(e){ toast("Erro ao apagar: " + (e.code || e.message)); }
+};
+$("logoutBtn").onclick = async () => { flush(); await signOut(auth); sheet.classList.remove("open"); };
+
+/* ================= login ================= */
+$("loginBtn").onclick = async () => {
+  $("loginBtn").disabled = true;
+  try{ await signInWithPopup(auth, provider); }
+  catch(e){
+    if(e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment"){
+      await signInWithRedirect(auth, provider);
+    } else if(e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request"){
+      toast("Não foi possível entrar: " + e.code);
+    }
+  }
+  $("loginBtn").disabled = false;
+};
+getRedirectResult(auth).catch(e => toast("Não foi possível entrar: " + e.code));
+
+function showApp(on){
+  $("gate").hidden = on; $("app").hidden = !on; $("bottombar").hidden = !on;
+}
+onAuthStateChanged(auth, async user => {
+  if(!user){
+    uid = null; showApp(false);
+    $("gateMsg").textContent = "Registre cargas e repetições de cada série. Seus treinos ficam salvos na nuvem e sincronizam entre aparelhos.";
+    $("loginBtn").hidden = false;
+    return;
+  }
+  uid = user.uid;
+  $("loginBtn").hidden = true; $("gateMsg").textContent = "Carregando seus treinos…";
+  try{
+    await loadCloud();
+    const av = $("menuBtn");
+    if(user.photoURL) av.innerHTML = `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">`;
+    else av.textContent = (user.displayName || user.email || "?").trim()[0].toUpperCase();
+    $("who").textContent = `Conectado como ${user.email}. Os dados ficam no Firebase e sincronizam entre aparelhos.`;
+    showApp(true);
+    setSync(navigator.onLine ? "ok" : "off");
+    render();
+  }catch(e){
+    $("gateMsg").textContent = e.code === "permission-denied"
+      ? "Sem permissão para ler os dados. Confira se as regras do Firestore foram publicadas."
+      : "Erro ao carregar: " + (e.code || e.message);
+  }
+});
+</script>
+</body>
+</html>
