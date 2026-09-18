@@ -39,13 +39,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .app{max-width:520px;margin:0 auto;min-height:100vh;position:relative}
 
 /* ---------- entrada ---------- */
-.gate{min-height:100vh;max-width:520px;margin:0 auto;padding:32px 24px max(40px,env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:flex-end;
-  background:
-    radial-gradient(120% 60% at 50% 0%, rgba(242,182,50,.14), transparent 60%),
-    var(--bg);}
-.gate-mark{width:84px;height:84px;margin-bottom:auto;margin-top:18vh}
+.gate{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:32px 24px max(32px,env(safe-area-inset-bottom));
+  background:radial-gradient(60% 45% at 50% 38%, rgba(242,182,50,.13), transparent 70%), var(--bg);}
+.gate-in{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.gate-mark{width:88px;height:88px;margin-bottom:18px}
 .gate h1{font-size:4.6rem;font-style:italic;letter-spacing:-.01em}
-.gate p{color:var(--muted);margin:10px 0 28px;max-width:34ch}
+.gate p{color:var(--muted);margin:12px auto 30px;max-width:32ch}
 .btn-main{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:var(--amber);color:var(--amber-ink);border-radius:16px;padding:17px;font-weight:600;font-size:1.05rem}
 .btn-main:disabled{opacity:.5}
 .gate code{background:var(--surface2);padding:2px 6px;border-radius:6px}
@@ -167,6 +166,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <!-- entrada -->
 <div class="gate" id="gate">
+ <div class="gate-in">
   <svg class="gate-mark" viewBox="0 0 100 100" aria-hidden="true"><rect x="8" y="36" width="12" height="28" rx="3" fill="#F2B632"/><rect x="80" y="36" width="12" height="28" rx="3" fill="#F2B632"/><rect x="22" y="26" width="12" height="48" rx="3" fill="#ECEAE4"/><rect x="66" y="26" width="12" height="48" rx="3" fill="#ECEAE4"/><rect x="34" y="46" width="32" height="8" rx="2" fill="#ECEAE4"/></svg>
   <h1>Treino</h1>
   <p id="gateMsg">Carregando…</p>
@@ -174,6 +174,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
     <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#1A1400" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
     Entrar com Google
   </button>
+ </div>
 </div>
 
 <!-- app -->
